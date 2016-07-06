@@ -1,9 +1,10 @@
-# Toy City version 2.1 "Makes Output Hash":
-# A hash is built to collect sales report_data by functions named "create" (see end comments).
-# The sales_data hash is converted to strings for output by functions named "print".
-# Output strings are merged into one sales_report string by make_report().
-# The sales_report is printed to report.txt by start().
-# Thanks to my Udacity Toy City 1 reviewer for "brands_all" and "toys_all" functions.
+# Version 2.2: Easy To Read
+# In this version:
+# Functions named "print" output strings.
+# Functions named "create" call "print" functions
+# Thanks to my udacity Toy City I reviewer for functions "brands_all" and "toys_all".
+
+# Reviewer: Please see version (v2.3 "Simple") in my previous github commit. 
 
 require 'json'
 def setup_files
@@ -48,93 +49,56 @@ end
 def brands_all()
   brands_all = $products_hash["items"].map{ |type| type["brand"]}.uniq
 end
-def create_one_brand(brand)
-  { "Brand" => brand, 
-    "Number of Products" => total_stock(brand),
-    "Average Product Price" => sprintf('$%0.2f',retail_price_average(brand)),
-    "Total Revenue" => sprintf('$%0.2f', total_revenue(brand))
-  }
-end
-def create_one_product(toy)
-  { "product" => toy["title"], 
-    "Retail Price" => sprintf('$%0.2f',retail_price(toy)),
-    "Total Purchases" => purchases_count(toy),
-    "Total Sales" => sprintf('$%0.2f', total_sales(toy)),
-    "Average Price" => sprintf('$%0.2f',average_product_sale(toy)),
-    "Average Discount" => sprintf('$%0.2f',average_discount(toy))
-  }
-end
-def create_products()
-  section_hash = {section_heading: "Products",  section_data: []}
-  $products_hash["items"].each do |toy|
-    section_hash[:section_data].push(create_one_product(toy))
-  end
-  return section_hash
-end
-def create_brands()
-  section_hash = {section_heading: "Brands",  section_data: []}
-  brands_all().each do |brand|
-    section_hash[:section_data].push(create_one_brand(brand))
-  end
-  return section_hash
-end
-def create_sales_data()
-  sales_data = {:sections => []}
-  sales_data[:sections].push(create_products())
-  sales_data[:sections].push(create_brands())
-  return sales_data
-end
 def print_heading(heading)
   require 'artii'
   heading_ascii = Artii::Base.new
-  return "\n#{heading_ascii.asciify(heading)}\n"
+  $report_file.puts "#{heading_ascii.asciify(heading)}\n"
 end
 def print_date
-  date = Time.now.strftime("%m/%d/%y")
-  return "Report made #{date}\n"
+  $report_file.puts "Report made #{Time.now.strftime("%m/%d/%y")}\n"
 end
-def print_section_data(section)
-  section_output = ""
-  section[:section_data].each do |item|
-    section_output << "#{(item.shift[1])}\n#{"*"*30}\n)"
-    item.each_pair {|name, value| section_output<<"#{name}: #{value}\n"}
-  end
-  return section_output
+def print_one_brand(brand)
+  $report_file.puts "#{brand}"
+  $report_file.puts "*"*30
+  $report_file.puts "Number of Products: #{total_stock(brand)}"
+  $report_file.puts "Average Product Price: #{sprintf('$%0.2f',retail_price_average(brand))}"
+  $report_file.puts "Total Revenue: #{sprintf('$%0.2f', total_revenue(brand))}"
+  $report_file.puts
 end
-def print_sections(sales_data)
-  sections_output = ""
-  sales_data[:sections].each do |section|
-    sections_output << print_heading(section[:section_heading])
-    sections_output << print_section_data(section)
-  end
-  return sections_output
+def print_one_product(toy)
+  $report_file.puts toy["title"]
+  $report_file.puts "*"*30
+  $report_file.puts "Retail Price: #{sprintf('$%0.2f',retail_price(toy))}"
+  $report_file.puts "Total Purchases: #{purchases_count(toy)}"
+  $report_file.puts "Total Sales: #{sprintf('$%0.2f', total_sales(toy))}"
+  $report_file.puts "Average Price: #{sprintf('$%0.2f',average_product_sale(toy))}"
+  $report_file.puts "Average Discount: #{sprintf('$%0.2f',average_discount(toy))}"
+  $report_file.puts
 end
-def make_report(options = {})
+def create_products()
+  print_heading("Products")
+  $products_hash["items"].each {|toy| print_one_product(toy)}
+end
+def create_brands()
+  print_heading("Brands")
+  brands_all().each {|brand| print_one_brand(brand)}
+end
+def create_sections()
+  create_products()
+  create_brands()
+end
+def create_report(options = {})
   heading = options[:title] ||"Sales Report" 
-  sales_data = create_sales_data()
-  sales_report = print_heading(heading) + print_date() + print_sections(sales_data)
-  return sales_report
+  print_heading(heading) 
+  print_date() 
+  create_sections()
 end
-#make_report() accepts an optional sales report title as {title: "<title>"}
+#start accepts an optional sales report title as {title: "<title>"}
 def start()
-  setup_files()
-  sales_report = make_report()
-  $report_file.puts sales_report
-  puts "Report printed to ./report.txt"
+  setup_files
+  create_report({title: "Sales Report"})
+  $report_file.close
+  puts "Report created in ./report.txt."
 end
 start()
-
-=begin
-sales_data structure: 
-sales_data = {
-  sections: [
-    {section_heading: "<section_name>",
-    section_data: {
-      "item" => "<value>"
-      }
-    }
-  ]
-}
-=end
-
 
